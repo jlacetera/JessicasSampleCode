@@ -180,6 +180,7 @@ $(document).ready(function() {
     /* see jquery at bottom for doing this */
     
     $("#table_sales_proj").tablesorter();
+    $(".editor").jqte();   
     
     setupInputParameters();
     
@@ -283,7 +284,7 @@ $(document).ready(function() {
             });    
         }      
     });   
-    $(".editor").jqte();     
+    
 });
 
 
