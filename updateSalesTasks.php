@@ -6,13 +6,8 @@
 REQUIRE_ONCE 'htmlRenderingLibrary.php';
 REQUIRE_ONCE 'dbInterfaceLibrary.php';
 
-//phpinfo(); just for debug - shows you what versions are running.
 
-
-/* this queries database for table data to fill in form data on html below */
-/* data read into local arrays to fill html */
-
-/* initialize arrays */
+/* initialize arrays used to build html*/
 
 $AssignedToArray="";
 $StatusArray="";
@@ -171,9 +166,6 @@ initializeFormData($employeeListArray,$contractStatusArray);
 
 $(document).ready(function() {
     
-    /* updateSalesTasks.php?SALESID="+salesId+'&ROWID='+selectedId; */
-    /* editId and salesId */
-    /* see jquery at bottom for doing this */
     
     $("#table_sales_proj").tablesorter();
     
@@ -205,7 +197,8 @@ $(document).ready(function() {
     
     /* when submit selected */
     $("#saveRow").click(function () {
-        //get all input elements.
+        
+        //get all input fields to file.
        
         var dataArray = new Array();
         var inputTypesArray = ['input','select','.editor'];
@@ -236,8 +229,6 @@ $(document).ready(function() {
            /* if no error - then create results string from array */
             
             var dataString=JSON.stringify(dataArray);
-        
-            //console.log('***** dataString: '+dataString);
        
             var editId=$("#editId").val();
             var whereClause='';
@@ -246,7 +237,7 @@ $(document).ready(function() {
                 whereClause=' WHERE id='+editId;    
             }
         
-            /* call AJAX to file data - php form for filing */
+            /* call AJAX to file data  */
             //function fileDataOnServer(tableName,dataString,deleteFlag, whereClause, formName, editRowId) 
             fileDataOnServer('sales_task_data',dataString,'0',whereClause,'TaskEntryTable',editId); 
         }
@@ -261,7 +252,6 @@ $(document).ready(function() {
             jAlert('Please Select A Row','Delete');
         }
         else {
-            //jConfirm(message,title,function (callback){
             jConfirm('Are you sure you want to delete this task?','Delete',function (callback){
                 if (callback) {
                     var editId=$("#editId").val();
@@ -274,14 +264,15 @@ $(document).ready(function() {
     
 });
 
-
+//this function highlights the selected row on the table and loads the
+//fields on the form with the data from the database.
 function highlightAndLoadRow(id, rowId, tableId,clickEvent) {        
-        /* set all classes back to original styles */
+
     console.log('in highlist, tableId: '+tableId+' id: '+id);
     selectRow(tableId,'',id,clickEvent);
         
     if (rowId=='') {
-            //clear all fields on form - input fields, except button fields, task_description in editor field.
+    	//clear all fields on form - input fields, except button fields, task_description in editor field.
         var clearArray=['input','select'];
         clearAllFields(clearArray,'button','task_description','.editor');
             
@@ -293,12 +284,13 @@ function highlightAndLoadRow(id, rowId, tableId,clickEvent) {
     }   
 }
 
+
 function setupInputParameters() {
     var salesId=getParameter('SALESID');
     var editId=getParameter('ROWID');
     var rowId='';
     
-    console.log('On Load:   salesId: '+salesId+' editId: '+editId);
+    //console.log('On Load:   salesId: '+salesId+' editId: '+editId);
     if (editId) {
         rowId=getEditRowId(editId,"#editId");
         //if rowId is not blank - 
@@ -317,9 +309,7 @@ function getSalesId() {
 
 <?php
 
-/* every form should have an initializeFormData function that initializes the local arrays that are needed
- * to populate the select and checkbox list data needed for the form.
- */
+/* initializes data that is used to build form selection lists */
 function initializeFormData(&$employeeListArray,&$contractStatusArray) {
      
     /* fill arrays with data from tables that are needed for selection and check box lists */
