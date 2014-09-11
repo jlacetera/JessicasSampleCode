@@ -13,7 +13,6 @@ $AssignedToArray="";
 $StatusArray="";
 
 /* this initializes the select and checkbox lists that are populated from the database */
-/* not sure we are doing it this way, but maybe.  this array list will change based on form */
 
 initializeFormData($employeeListArray,$contractStatusArray);
 
