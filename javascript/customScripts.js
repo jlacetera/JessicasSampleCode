@@ -166,7 +166,7 @@ function openNewWindow(url,type) {
 /* for now - all columns are passed back, and orderBy is  not being passed in.  This will be added. */
 
 function getServerTableData(tableName,formName,whereClause, orderBy) { 
-    //console.log("*** making ajax call, table: "+tableName+' whereClause: '+whereClause+' orderBy: '+orderBy+" formName: "+formName);
+    console.log("*** making ajax call, table: "+tableName+' whereClause: '+whereClause+' orderBy: '+orderBy+" formName: "+formName);
     
     $.ajax({
         url: "GetTableData.php",
@@ -224,6 +224,8 @@ function buildTableData(tableBodyId,tableRowsJSON,addBlankRow) {
     var value;
     var rowClassType='';
     
+    console.log('in buildTableData')
+    
     switch (tableBodyId) {
         case 'main_table_sales_proj':
             rowClass ='';
@@ -238,8 +240,8 @@ function buildTableData(tableBodyId,tableRowsJSON,addBlankRow) {
     /* for each tableRowsJSON - build table rows */
     
     $.each(tableRowsJSON, function(idx,obj) {  
-        //console.log('BUILDTABLE:  idx: '+idx+' obj: '+obj);
-        //console.log('  obj.id: '+obj.id);
+        console.log('BUILDTABLE:  idx: '+idx+' obj: '+obj);
+        console.log('  obj.id: '+obj.id);
         
         htmlString=htmlString+'<tr id="'+rowIdPrePend+obj.id+'" '+rowClass+'>';
         /* now build columns in this row */
@@ -469,10 +471,11 @@ function saveTableDataReturn(formName,result) {
     switch (formName) {
         case 'TaskEntryTable':
             //check result.  if not success - give error.  Delete row also calls this function.
+            var salesId=getSalesId();
             var typeArray=['input','select'];
-            clearAllFields(typeArray,'button','task_description','.editor');
-            salesId=getSalesId();
-            //console.log('salesId: '+salesId);
+            var excludeIdsArray=['salesId'];
+            clearAllFields(typeArray,'button','.editor',excludeIdsArray);
+            console.log('*** Before buildTable - salesId: '+salesId);
             buildTable(formName,salesId);
             break;
         
@@ -484,16 +487,17 @@ function saveTableDataReturn(formName,result) {
 /* Function clearAllFields - 
  * this function will clear all input fields on web page. 
  * type can be any pattern match that works with jquery selector.  
- * id must be set for field for it to be cleared 
+ * id must be set for field for it to be cleared.
+ * Hidden fields will be cleared.  Might want to change this in the future.
  * 
  * Parameters:
  * typeArray - array of jquery selectors
- * exclude - string of attribute types to exclude (example - label, button.
- * editorFields - string with jqte editor fields
+ * excludeAttr - string of attribute types to exclude (example - label, button.
  * editorClass - class that defines jqte editor fields.
+ * excludeIdsArray - array of ids to exclude from clearing.
  * */
 
-function clearAllFields (typeArray, exclude, editorFields, editorClass) {
+function clearAllFields (typeArray, excludeAttr, editorClass, excludeIdsArray) {
     var id='';
     var type;
     
@@ -502,12 +506,13 @@ function clearAllFields (typeArray, exclude, editorFields, editorClass) {
         
         $(type).each(function() {
             id=this.id;
-            //console.log('clear fields:   id: '+id);
-            if (id != '') {
+            //if id is set and it does not exist in exclude array - then continue with clearing logic.
+            if (id != '' &&  typeof excludeIdsArray[id] === "undefined") {
                 //allInputs.attr('type');
-                //console.log('clear fields:   id: '+id+' TYPE: '+$('#'+id).attr('type'));
-                if ((exclude!= '') &&  $('#'+id).attr('type') != exclude) {
+                console.log('clear fields:   id: '+id+' TYPE: '+$('#'+id).attr('type'));
+                if ((excludeAttr != '' &&  $('#'+id).attr('type') != excludeAttr) || excludeAttr == '') {
                     $('#'+id).val('');
+                    console.log('clearing field:   id: '+id);
                 }
             }
         });
@@ -516,14 +521,8 @@ function clearAllFields (typeArray, exclude, editorFields, editorClass) {
     if (editorClass != '') {
         $(editorClass).each(function() {
             id=this.id;
-            //console.log('clear fields:   id: '+id);
             if (id != '') {
-                //allInputs.attr('type');
-                //console.log('clear fields:   id: '+id+' TYPE: '+$('#'+id).attr('type'));
-                /* check editor fields */
-                if (editorFields.search(id) != -1) {
-                    $('#'+id).jqteVal('');
-                }         
+                $('#'+id).jqteVal('');    
             }
         });
     }    
@@ -549,6 +548,7 @@ function buildTable(formName,selectId) {
             if (selectId != '') {
                 whereClause='WHERE sales_leads_id = '+selectId;
             }
+            console.log('in buildTable:  selectedId, whereClaus: '+whereClause);
             getServerTableData('sales_task_data','main_table_sales_proj',whereClause,'')
             break;
      
@@ -742,7 +742,8 @@ function getEditRowId(id,idToSet) {
             $(idToSet).val(rowId);
         }
         
-    return(rowId);   
+    return(rowId);
+    
 }
 
 

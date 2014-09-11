@@ -40,13 +40,25 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         $resultsArray['ai_status_id']=getFormValue('status','TXT');
         $resultsArray['deliverable_flag']=getFormValue('deliverablebox','TXT');
         
-        $resultsArray['entered_by_employee_id']=getFormValue('entered_by_employee_id','ID');
+        /* this next field is not on the form - but will be set if/when user logs in */
+        $resultsArray['updated_by_employee_id']=getFormValue('updated_by_employee_id','ID');
+        
+        $resultsArray['assigned_by_employee_id']=getFormValue('assigned_by_employee_id','ID');
         $resultsArray['closed_by_employee_id']=getFormValue('closed_by_employee_id','ID');
+        
+        $resultsArray['date_closed']=getFormValue('date_closed','DATE');
+        $resultsArray['date_completed']=getFormValue('date_completed','DATE');
+        $resultsArray['ai_progress_id']=getFormValue('ai_progress_id','ID');
         
         $resultsDelivDateArray['reason_for_date_change']=getFormValue('reasonForDateChange','TXT');
         $resultsDelivDateArray['deliverable_date_due']=getFormValue('Deliverable_Date_Due','DATE');
         $resultsDelivDateArray['deliverable_date_actual']=getFormValue('Actual_Date_Due','DATE');
-         
+
+        $origDueDate=getFormValue('origDueDate','DATE');
+        $origDeliveredDate=getFormvalue('origDeliveredDate','DATE');
+        
+        //updated_by_employee_id will be added at a later time - when we get user logins working.
+        //
         //echo 'filing ai_priority_id: '.$resultsArray['ai_priority_id'].' from POST: '.$_POST['priority'].'<br><br>';
         
         /* for debug only
@@ -55,7 +67,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         }  */
          
         $tableRowId=updateTableData('action_item_data',$resultsArray,$editRowId);
-        //$tableRowId=''; for testing.
+     
         //////if error - then display message popup and don't re-initialize form.
         //else - re-initialize form data.  make sure POST flag cleared.
         if ($tableRowId=="") {
@@ -66,9 +78,20 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         else {  //file child table - if new record and deliverable date set, or reason for date change is set 
             //echo 'editRowId: '.$editRowId.' reasonforDateChange: '.$resultsDelivDateArray['reason_for_date_change'].'<br><br>';
             if ($resultsArray['deliverable_flag'] == 1) {
-                //If new AI, or reason for change is set - then must file new delivery dates
-                if (($editRowId =='') || (trim($resultsDelivDateArray['reason_for_date_change'])!= '')) {
+                $fileDelivDate='';
+                if (trim($resultsDelivDateArray['reason_for_date_change']!='')) {
+                    $fileDelivDate=1;
+                }
+                else if ($origDueDate != $resultsDelivDateArray['deliverable_date_due']) {
+                    $fileDelivDate=1;
+                }
+                else if ($resultsDelivDateArray['deliverable_date_actual'] != $origDeliveredDate) {
+                    $fileDelivDate=1;
+                }
+                
+                if ($fileDelivDate) {
                     $resultsDelivDateArray['action_item_id']=$tableRowId;
+                    //echo 'calling updateTableData for deliery dates.';
                     $tableDelivDateRowId=updateTableData('ai_delivery_date_data',$resultsDelivDateArray,'');
                 }
             }
@@ -90,9 +113,10 @@ $AssignedToArray="";
 $PriorityArray="";
 $StatusArray="";
 $MeetingArray='';
+$ProgressArray='';
 
 /* this initializes the select and checkbox lists that are populated from the database */
-initializeFormDataAI($ProjectArray,$AssignedToArray,$PriorityArray,$StatusArray,$MeetingArray);
+initializeFormDataAI($ProjectArray,$AssignedToArray,$PriorityArray,$StatusArray,$MeetingArray,$ProgressArray);
 
 /* if error on post or data filed already - load from post and display message */
 if (($postError==1) || ($dataFiled == 1)) {   
@@ -110,9 +134,13 @@ if (($postError==1) || ($dataFiled == 1)) {
     $deliverabledateactual=$resultsDelivDateArray['deliverable_date_actual'];
     $reasonForDateChange=$resultsDelivDateArray['reason_for_date_change'];
     $status=$resultsArray['ai_status_id'];
-    $entered_by_employee_id=$resultsArray['entered_by_employee_id'];
+    $assigned_by_employee_id=$resultsArray['assigned_by_employee_id'];
     $closed_by_employee_id=$resultsArray['closed_by_employee_id'];
-     
+    
+    $date_closed=$resultsArray['date_closed'];
+    $date_completed=$resultsArray['date_completed'];
+    $ai_progress_id=$resultsArray['ai_progress_id'];
+    
     $editId=$editRowId;
 }
 /* initialize all fields on form to blank */
@@ -131,8 +159,13 @@ else {
     $deliverabledateactual="";
     $status="";
     $editId="";
-    $entered_by_employee_id="";
+    $assigned_by_employee_id="";
     $closed_by_employee_id="";
+    $updated_by_employee_id="";
+    
+    $date_closed="";
+    $date_completed="";
+    $ai_progress_id="";
     
     $Actual_Date_Due='';
     $Deliverable_Date_Due='';
@@ -141,6 +174,7 @@ else {
     //hidden field
     $dateHistoryExists='';
     
+
     // default dateopen to todays date.  If we are editing a record this will be overwritten by what is in the table.
     $dateopen=date("Y-m-d"); 
 
@@ -186,8 +220,12 @@ else {
         if (isset($ActionArray[0]['deliverable_flag']))  {       $deliverablebox=$ActionArray[0]['deliverable_flag'];}
         if (isset($delivDateArray[0]['deliverable_date_due'])) {    $Deliverable_Date_Due=$delivDateArray[0]['deliverable_date_due'];}
         if (isset($delivDateArray[0]['deliverable_date_actual'])) { $Actual_Date_Due=$delivDateArray[0]['deliverable_date_actual'];}
-        if (isset($ActionArray[0]['entered_by_employee_id'])) {  $entered_by_employee_id=$ActionArray[0]['entered_by_employee_id'];}
-        if (isset($ActionArray[0]['closed_by_employee_id'])) {  $closed_by_employee_id=$ActionArray[0]['closed_by_employee_id'];}        
+        if (isset($ActionArray[0]['updated_by_employee_id'])) {  $updated_by_employee_id=$ActionArray[0]['updated_by_employee_id'];}
+        if (isset($ActionArray[0]['assigned_by_employee_id'])) {  $assigned_by_employee_id=$ActionArray[0]['assigned_by_employee_id'];}
+      
+        if (isset($ActionArray[0]['date_closed'])) {  $date_closed=$ActionArray[0]['date_closed'];}
+        if (isset($ActionArray[0]['date_completed'])) {  $date_completed=$ActionArray[0]['date_completed'];}
+        if (isset($ActionArray[0]['ai_progress_id']))  {         $ai_progress_id=$ActionArray[0]['ai_progress_id'];} 
     }
 }
 ?>
@@ -218,7 +256,7 @@ else {
     <p class="mainTitle">Action Item Entry Form</p>
     <input type="hidden" name="editId" id="editid" value=<?php echoValue($editId); ?>>
     
-    <div id="leftInfoAddSmall">     
+    <div id="leftInfoAddAuto">     
         <div id="leftColumnInfo"> 
             <label class="requiredField">Task Title</label>
         </div>
@@ -264,45 +302,61 @@ else {
         </div>
         <br><br>    
      
-        <div id="leftColumnInfo"><label>Entered By</label></div>
+        <div id="leftColumnInfo"><label class="requiredField">Assigned By</label></div>
         <div id="rightColumnInfo">
-        <select id="entered_by_employee_id" name="entered_by_employee_id" class="formInputMedium">
+        <select id="assigned_by_employee_id" name="assigned_by_employee_id" class="formInputMedium" required>
 <?php
-        createSelectHTML($AssignedToArray,'id','name_last','name_first',$entered_by_employee_id,', ');
+        createSelectHTML($AssignedToArray,'id','name_last','name_first',$assigned_by_employee_id,', ');
 ?>              
         </select>
         </div>
-        
-        <!--</div>-->
-    <!-- end of leftInfoAdd div -->    
-    </div>
-    
-    <div id='rightInfoAddSmall'>
-    
-        <!--Priority Title-->
+        <br><br>
+         <!--Priority Title-->
         <div id="leftColumnInfo"><label>Priority</label></div>
         <div id="rightColumnInfo"><select id = "Priority" name="priority" class="formInputSmall">
         <?php createSelectHTML($PriorityArray,'id','value','',$priority,'');?>
         </select>  <!-- Closing Type of Priority -->
         </div>
-        <br><br>
-        
-         <div id="leftColumnInfo"><label class="requiredField">Status</label></div>
-        <div id="rightColumnInfo">
-        <select id="status" name="status" required class="formInputSmall">
+        <!--</div>-->
+    <!-- end of leftInfoAdd div -->    
+    <br><br><br>
+    </div>
+    
+    <div id='rightInfoAddAuto'>
+       
+        <div id="leftColumnInfo1">
+            <label class="requiredField">Status</label><br>
+            <select id="status" name="status" required class="formInputSmall">
             <?php createSelectHTML($StatusArray,'id','value','',$status,'');?>
-        </select>
+            </select>
         </div>
-        <br><br>
-        
-        <div id="leftColumnInfo"><label id='closed_by_employee_id_label'>Closed By</label></div>
+        <div id='rightColumnInfo'>
+            <label id='date_closed_label'>Date Closed</label><br>
+            <input type="text" name="date_closed"  id="date_closed" class="dateInput1" value="<?php echo $date_closed;?>" disabled>
+        </div>
+        <br><br><br>
+    
+         <div id="leftColumnInfo"><label id='closed_by_employee_id_label'>Closed By</label></div>
         <div id="rightColumnInfo">
         <select id="closed_by_employee_id" name="closed_by_employee_id" class="formInputMedium">
 <?php
-        createSelectHTML($AssignedToArray,'id','name_first','name_last',$closed_by_employee_id,'');
+        createSelectHTML($AssignedToArray,'id','name_last','name_first',$assigned_by_employee_id,', ');
 ?>              
         </select>
         </div> 
+        <br><br>
+         <div id="leftColumnInfo">    
+             <label class="requiredField">Task State</label><br>
+        
+        <select id="ai_progress_id" name="ai_progress_id" required class="formInputSmall">
+            <?php createSelectHTML($ProgressArray,'id','value','',$ai_progress_id,'');?>
+        </select>
+         </div>
+        <div id='rightColumnInfo'> 
+            <label id='date_completed_label'>Date Completed</label><br>
+            <input type="text" name="date_completed"  id="date_completed" class="dateInput1" value="<?php echo $date_completed;?>" disabled>
+        </div>
+        <br>
         <br><br>   
         
       <!--<div class="Deliverable"> -->
@@ -409,6 +463,12 @@ $(document).ready(function() {
     $("#Actual_Date_Due").datepicker({
     });
     
+    $("#date_closed").datepicker({
+    });
+    
+    $("#date_completed").datepicker({
+    });
+    
     $("#dialog").dialog({
 	autoOpen: false,
 	width: 400
@@ -418,10 +478,12 @@ $(document).ready(function() {
     setupDeliverableFields();
     setupStatusFields();
     setupReasonDateChangeField(0);
+    setupProgressFields();
     
    /* check format of date fields to make sure that they are the correct format */
    /* class="dateInput" */
    fixDateFormat('dateInput');
+   fixDateFormat('dateInput1');
    
     /* event code below */
    
@@ -441,8 +503,8 @@ $(document).ready(function() {
                 $.get(url,
                     {AI: aiId},
                     function(ajaxresult,status){
-                        console.log("returned from get, status: "+status);
-                        console.log("returned from get, result: "+ajaxresult);
+                        //console.log("returned from get, status: "+status);
+                        //console.log("returned from get, result: "+ajaxresult);
                         $('#dialog').html(ajaxresult);
                     }
                 );
@@ -465,8 +527,12 @@ $(document).ready(function() {
         setupStatusFields();
     });
     
+    $('#ai_progress_id').change(function() {
+         setupProgressFields();
+    });
+    
     $('#DateOpen').change(function() {
-        console.log("in date opened change, DateOpen: "+$('#DateOpen').val()+" dateDue: "+$('#DateDue').val());
+        //console.log("in date opened change, DateOpen: "+$('#DateOpen').val()+" dateDue: "+$('#DateDue').val());
         if (!validateStartEndDate($('#DateOpen').val(),$('#DateDue').val(),0)) {
             jAlert("Invalid Entry for Date Assigned: '"+$('#DateOpen').val()+"'.  Date Assigned cannot be after Due Date.");
             $('#DateOpen').val("");
@@ -500,12 +566,13 @@ function checkDeliverableDateChange(origId, newId) {
     var enableType=0;
     
     console.log("origDate: "+origDate+" newDate: "+newDate);
-    if ((origDate != '') && (origDate != newDate)) {
-        enableType=1;
+    
+    if (origDate != newDate) {
+        if (origDate != '') {
+            enableType=1;
+        }
     }
-    
     setupReasonDateChangeField(enableType);
-    
 }
 
 /* type = 1 for enable, type = 0 for disable */
@@ -521,44 +588,70 @@ function setupReasonDateChangeField(type) {
     }
 }
 
+function setupProgressFields() {
+    //if completed - require date_completed.
+    if ($('#ai_progress_id').val() == 4){
+        $("#date_completed").attr("required",true);
+        $("#date_completed").attr("disabled",false);
+        $("#date_completed_label").addClass('requiredField');
+    }
+    else {
+        $("#date_completed").attr("required",false);
+        $("#date_completed").attr("disabled",true);
+        $("#date_completed_label").removeClass('requiredField');
+        $("#date_completed").val('');
+    }
+}
+
 
 function setupStatusFields() {
     if ($('#status').val() == 2){
-        console.log('val=2, assuming this is closed');   
+        //console.log('val=2, status is closed');   
         $("#closed_by_employee_id").attr("required",true);
         $("#closed_by_employee_id").attr("disabled",false);
-        $("#closed_by_employee_id_label").attr("class","requiredField");
+        
+        $("#date_closed").attr("required",true);
+        $("#date_closed").attr("disabled",false);
+        
+        $("#closed_by_employee_id_label").addClass("requiredField");
+        $("#date_closed_label").addClass("requiredField");
         
         if ($("input[name=deliverablebox]:checked").val() == "1") {
                 $("#Actual_Date_Due").attr("required", true);
-                $("#clientDeliveredDateLabel").attr("class", "requiredField");
+                $("#clientDeliveredDateLabel").addClass("requiredField");
         }
     }
     else {
-        console.log('val not 2, in else');
+        //not closed;
         $("#closed_by_employee_id").attr("required",false);
-        $("#closed_by_employee_id_label").attr("class","");
+        $("#closed_by_employee_id_label").removeClass("requiredField");
         $("#closed_by_employee_id").attr("disabled",true);
         $("#closed_by_employee_id").val('');
+        
+        $("#date_closed").attr("required",false);
+        $("#date_closed").removeClass("requiredField");
+        $("#date_closed").attr("disabled",true);
+        $("#date_closed").val('');
  
         $("#Actual_Date_Due").attr("required", false);
-        $("#clientDeliveredDateLabel").attr("class", "");
+        $("#clientDeliveredDateLabel").removeClass("requiredField");
         
         if ($("input[name=deliverablebox]:checked").val() == "1") {
             $("#Actual_Date_Due").attr("required", false);
-            $("#clientDeliveredDateLabel").attr("class", "");
+            $("#clientDeliveredDateLabel").removeClass("requiredField");
         }    
         
     }
 }
 
 function setupDeliverableFields() {
+    //console.log('In setupDeliverableFields');
     
     if ($("input[name=deliverablebox]:checked").val() == "1") {
         $("#Actual_Date_Due").attr("disabled", false);
         $("#Deliverable_Date_Due").attr("disabled", false);
         $("#Deliverable_Date_Due").attr("required", true);
-        $("#clientDueDateLabel").attr("class", "requiredField");
+        $("#clientDueDateLabel").addClass("requiredField");
         $("#Project").attr("required", true);
         $("#projectLabel").addClass('requiredField');
         
@@ -566,20 +659,20 @@ function setupDeliverableFields() {
         /* if status is closed */
         if ($('#status').val() == 2){
             $("#Actual_Date_Due").attr("required", true);
-            $("#clientDeliveredDateLabel").attr("class", "requiredField");
+            $("#clientDeliveredDateLabel").addClass("requiredField");
         }
         else {
             $("#Actual_Date_Due").attr("required", false);
-            $("#clientDeliveredDateLabel").attr("class", "");
+            $("#clientDeliveredDateLabel").removeClass("requiredField");
         }
     }
     if ($("input[name=deliverablebox]:checked").val() == "0") {
         $("#Actual_Date_Due").attr("disabled", true);
         $("#Deliverable_Date_Due").attr("disabled", true);
         $("#Deliverable_Date_Due").attr("required", false);
-        $("#clientDueDateLabel").attr("class", "");
+        $("#clientDueDateLabel").removeClass("requiredField");
         $("#Actual_Date_Due").attr("required", false);
-        $("#clientDeliveredDateLabel").attr("class", "");
+        $("#clientDeliveredDateLabel").removeClass("requiredField");
         $("#Project").attr("required", false);
         $("#projectLabel").removeClass('requiredField');
     }

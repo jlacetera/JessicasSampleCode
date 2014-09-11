@@ -25,11 +25,11 @@ function validateForm(thisForm,formName) {
             //console.log('Status:b'+thisForm.projectStatus.value+"b");
             //console.log('type:b'+thisForm.projectType.value+"b");
             
-            if (thisForm.projectType.value=='' || thisForm.projectType.value==' ') {
+            if (thisForm.projectType.value.trim() =='') {
                 dispError=dispError+'Project Type entry is required. \n';
             }
             
-            if (thisForm.projectStatus.value=='' || thisForm.projectStatus.value==' ') {
+            if (thisForm.projectStatus.value.trim()=='') {
                 dispError=dispError+'Project Status entry is required. \n';
             }
             
@@ -63,19 +63,31 @@ function validateForm(thisForm,formName) {
             
         case 'addNewActionItemForm':
             /* must validate that  status and assignedTo are set */
-             if (thisForm.status.value=='' || thisForm.status.value==' ') {
+            if (thisForm.status.value.trim()=='') {
                 dispError=dispError+'Status entry is required. \n';
             }
-            if (thisForm.AssignedTo.value=='' || thisForm.AssignedTo.value==' ') {
+            
+            if (thisForm.AssignedTo.value.trim() =='') {
                 dispError=dispError+'Assigned To entry is required. \n';
             }
             
-           tempValue=thisForm.taskdescription.value;
-           tempValue=tempValue.trim();
-           if (tempValue == '') {
-               dispError=dispError+'Task Description entry is required. \n';
-           }
+            if (thisForm.ai_progress_id.value.trim()=='') {
+                dispError=dispError+'Task State entry is required. \n';
+            }
             
+            tempValue=thisForm.taskdescription.value;
+            if (tempValue.trim() == '') {
+               dispError=dispError+'Task Description entry is required. \n';
+            }
+            
+            /* if deliverable - then project should be required */
+          
+            if (thisForm.deliverablebox.value == 1) {
+               if (thisForm.project.value.trim()=='') {
+                dispError=dispError+'Project entry is required. \n';
+                } 
+            }
+            /**/
             break;
             
         case 'addNewMeetingForm':
@@ -85,7 +97,7 @@ function validateForm(thisForm,formName) {
              * 
              */
             /* must validate that  meeting type is entered */
-             if (thisForm.Type_of_Meeting.value=='' || thisForm.Type_of_Meeting.value==' ') {
+             if (thisForm.Type_of_Meeting.value.trim() =='') {
                 dispError=dispError+'Meeting Type entry is required. \n';
             }
             
@@ -95,7 +107,6 @@ function validateForm(thisForm,formName) {
            if (tempValue == '') {
                dispError=dispError+'Meeting Minutes entry is required. \n';
            }
-            
             
             break;
     }
@@ -202,7 +213,7 @@ function validateStartEndDate(start,end,displayMessage) {
         start=getDateValue(start);
         end=getDateValue(end);
         
-        console.log("validate dates, start: "+start+" end: "+end);
+        //console.log("validate dates, start: "+start+" end: "+end);
         
         if (end < start) {
             validDate=0;
